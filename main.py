@@ -2,6 +2,9 @@ from DataCleaning import DataCleaning
 from DataManipulator import DataManipulator
 from DataPreprocessing import DataPreprocessing
 from DataVisualization import DataVisualization
+from EDA import EDA
+from FeatureAnalysis import FeatureAnalysis
+from HypothesisTesting import HypothesisTesting
 
 
 class GooglePlayStoreApps:
@@ -20,11 +23,18 @@ class GooglePlayStoreApps:
         # self.plot_types = ['hist', 'violin', 'box', 'scatter', 'lines', 'bar', 'lollypops']
 
     def run(self):
-        DataPreprocessing(self.data, 4)
+        DataPreprocessing(self.data, number_categorical_features=0)
         DataCleaning(self.data).remove_duplicates()
         DataCleaning(self.data).handle_missing_values()
         DataCleaning(self.data).remove_outliers()
         DataVisualization(self.data).plot_features(self.plot_types)
+        self.data.data_train, self.data.data_test, self.data.labels_train = EDA(self.data).perform_eda()
+        FeatureAnalysis(self.data).perform_pca(number_categorical_features=4)
+        FeatureAnalysis(self.data).relevant_feature_identification(num_features=3)
+        hypothesis_tester = HypothesisTesting(self.data)
+        hypothesis_tester.anova_results()
+        hypothesis_tester.kruskal_wallis_results()
+        hypothesis_tester.t_test_results()
 
 
 if __name__ == "__main__":

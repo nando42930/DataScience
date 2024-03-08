@@ -32,9 +32,14 @@ class FeatureAnalysis:
             if self.data_loader.data_train is None and self.data_loader.data_test is None:
                 raise ValueError("Data has not been loaded yet.")
 
+            # Remove columns with zero variance
+            data_for_pca = self.data_loader.data_train
+            non_constant_columns = data_for_pca.columns[data_for_pca.var() != 0]
+            data_for_pca = data_for_pca[non_constant_columns]
+
             # Perform PCA
             pca = PCA()
-            pca.fit(self.data_loader.data_train.iloc[:, :-number_categorical_features])
+            pca.fit(data_for_pca)
 
             # Determine the number of components to retain
             explained_variance_ratio_cumulative = np.cumsum(pca.explained_variance_ratio_)
