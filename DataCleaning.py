@@ -20,16 +20,18 @@ class DataCleaning:
         """
         try:
             # Check if data and labels are not None
-            if self.data_loader.data_train is None:
+            if self.data_loader.df is None:
                 raise ValueError("Data has not been loaded yet.")
-            if self.data_loader.labels_train is None:
-                raise ValueError("Labels have not been loaded yet.")
+
+            num_samples_before = len(self.data_loader.df)
+            print("Number of samples before removing duplicates:", num_samples_before)
 
             # Remove duplicate rows from training data (do not apply to test data)
-            self.data_loader.data_train.drop_duplicates(inplace=True)
-            self.data_loader.labels_train = self.data_loader.labels_train[self.data_loader.data_train.index]
+            self.data_loader.df.drop_duplicates(inplace=True)
 
-            print("Duplicate rows removed from training data.")
+            num_samples_after = len(self.data_loader.df)
+            print("Number of samples after removing duplicates:", num_samples_after)
+            print()
 
         except ValueError as ve:
             print("Error:", ve)
@@ -43,36 +45,34 @@ class DataCleaning:
         """
         try:
             # Check if data is not None
-            if self.data_loader.data_train is None or self.data_loader.data_test is None:
+            if self.data_loader.df is None:
                 raise ValueError("Data has not been loaded yet.")
 
             # Check if there are missing values
-            if self.data_loader.data_train.isnull().sum().sum() == 0 and self.data_loader.data_test.isnull().sum().sum() == 0:
+            if self.data_loader.df.isnull().sum().sum() == 0:
                 print("No missing values found in the data.")
                 return
+            else:
+                num_samples_before = len(self.data_loader.df)
+                print("Number of samples before handling missing values:", num_samples_before)
 
             # Handle missing values based on the specified strategy
             if strategy == 'mean':
-                self.data_loader.data_train.fillna(self.data_loader.data_train.mean(), inplace=True)
-                self.data_loader.data_test.fillna(self.data_loader.data_test.mean(), inplace=True)
+                self.data_loader.df.fillna(self.data_loader.df.mean(), inplace=True)
             elif strategy == 'median':
-                self.data_loader.data_train.fillna(self.data_loader.data_train.median(), inplace=True)
-                self.data_loader.data_test.fillna(self.data_loader.data_test.median(), inplace=True)
+                self.data_loader.df.fillna(self.data_loader.df.median(), inplace=True)
             elif strategy == 'most_frequent':
-                self.data_loader.data_train.fillna(self.data_loader.data_train.mode().iloc[0], inplace=True)
-                self.data_loader.data_test.fillna(self.data_loader.data_test.mode().iloc[0], inplace=True)
+                self.data_loader.df.fillna(self.data_loader.df.mode().iloc[0], inplace=True)
             elif strategy == 'fill_nan':
-                self.data_loader.data_train.fillna(strategy, inplace=True)
-                self.data_loader.data_test.fillna(strategy, inplace=True)
+                self.data_loader.df.fillna(strategy, inplace=True)
             elif strategy == 'drop':
-                self.data_loader.data_train = self.data_loader.data_train.dropna(axis=0)
-                self.data_loader.labels_train = self.data_loader.labels_train[self.data_loader.data_train.index]
-                self.data_loader.data_test = self.data_loader.data_test.dropna(axis=0)
-                self.data_loader.labels_test = self.data_loader.labels_test[self.data_loader.data_test.index]
-
+                self.data_loader.df = self.data_loader.df.dropna(axis=0)
             else:
                 raise ValueError("Invalid strategy.")
             print("Missing values handled using strategy:", strategy)
+            num_samples_after = len(self.data_loader.df)
+            print("Number of samples after handling missing values:", num_samples_after)
+            print()
 
         except ValueError as ve:
             print("Error:", ve)
@@ -89,17 +89,17 @@ class DataCleaning:
         """
         try:
             # Check if test data is not None
-            if self.data_loader.data_train is None:
+            if self.data_loader.df is None:
                 raise ValueError("Data has not been loaded yet.")
 
             # Identify numerical features
-            numerical_features = self.data_loader.data_train.select_dtypes(include=['number'])
+            numerical_features = self.data_loader.df.select_dtypes(include=['number'])
 
             # Calculate z-scores for numerical features
             z_scores = (numerical_features - numerical_features.mean()) / numerical_features.std()
 
             # Find outliers based on threshold
-            outliers = self.data_loader.data_train[(z_scores.abs() > threshold).any(axis=1)]
+            outliers = self.data_loader.df[(z_scores.abs() > threshold).any(axis=1)]
 
             return outliers
 
@@ -115,17 +115,21 @@ class DataCleaning:
         """
         try:
             # Check if data_loader.data is not None
-            if self.data_loader.data_train is None:
+            if self.data_loader.df is None:
                 raise ValueError("Data has not been loaded yet.")
 
             # Detect outliers
             outliers = self._detect_outliers(threshold)
 
-            # Remove outliers from the dataset
-            self.data_loader.data_train = self.data_loader.data_train.drop(outliers.index)
-            self.data_loader.labels_train = self.data_loader.labels_train[self.data_loader.data_train.index]
+            num_samples_before = len(self.data_loader.df)
+            print("Number of samples before removing outliers:", num_samples_before)
 
-            print("Outliers removed from the dataset.")
+            # Remove outliers from the dataset
+            self.data_loader.df = self.data_loader.df.drop(outliers.index)
+
+            num_samples_after = len(self.data_loader.df)
+            print("Number of samples after removing outliers:", num_samples_after)
+            print()
 
         except ValueError as ve:
             print("Error:", ve)
